@@ -35,8 +35,8 @@ export class NativeMapComponent implements OnInit {
     await this.loading.present();
 
     Environment.setEnv({
-      'API_KEY_FOR_BROWSER_RELEASE': 'AIzaSyDAga47tGm5Fh_KZ9I5VRr_a20Ikx-2YPc',
-      'API_KEY_FOR_BROWSER_DEBUG': 'AIzaSyDAga47tGm5Fh_KZ9I5VRr_a20Ikx-2YPc'
+      'API_KEY_FOR_BROWSER_RELEASE': '',
+      'API_KEY_FOR_BROWSER_DEBUG': ''
     });
 
     const mapOptions: GoogleMapOptions = {
