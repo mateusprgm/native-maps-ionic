@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-
+import { DeviceOrientation, DeviceOrientationCompassHeading } from '@ionic-native/device-orientation';
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
@@ -8,6 +8,7 @@ import { Component } from '@angular/core';
 })
 export class HomePage {
 
+  constructor(){}
   
 
 }

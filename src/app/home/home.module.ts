@@ -7,13 +7,18 @@ import { RouterModule } from '@angular/router';
 import { HomePage } from './home.page';
 
 import { NativeMapComponent } from '../components/native-map/native-map.component';
+
 import { GoogleMaps } from '@ionic-native/google-maps';
+import { DeviceOrientation } from '@ionic-native/device-orientation/ngx';
+
+
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
+    
     RouterModule.forChild([
       {
         path: '',
@@ -24,6 +29,7 @@ import { GoogleMaps } from '@ionic-native/google-maps';
   ],
   providers:[
     GoogleMaps,
+    DeviceOrientation
   ],
   declarations: [HomePage, NativeMapComponent]
 })

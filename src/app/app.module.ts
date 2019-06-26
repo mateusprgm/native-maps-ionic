@@ -13,6 +13,7 @@ import { AppRoutingModule } from './app-routing.module';
 
 
 
+
 enableProdMode()
 @NgModule({
   declarations: [AppComponent],
@@ -29,7 +30,8 @@ enableProdMode()
     
     
 
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    
   ],
   bootstrap: [AppComponent]
 })
