@@ -1,8 +1,9 @@
 import { Component, ViewChild, OnInit, NgModule } from '@angular/core';
-import { Environment, GoogleMap, GoogleMaps, GoogleMapsAnimation, GoogleMapOptions, MyLocation, MyLocationOptions, ILatLng } from '@ionic-native/google-maps';
+import { Environment, GoogleMap, GoogleMaps, GoogleMapsAnimation, GoogleMapOptions, MyLocation, MyLocationOptions, ILatLng, KmlOverlay, Circle, CircleOptions, LatLng, MarkerIcon, GoogleMapsEvent } from '@ionic-native/google-maps';
 import { LoadingController, Platform } from '@ionic/angular';
 import { DeviceOrientation, DeviceOrientationCompassOptions } from '@ionic-native/device-orientation/ngx';
 import { DeviceOrientationCompassHeading } from '@ionic-native/device-orientation';
+import { Observable } from 'rxjs';
 
 
 declare var google: any;
@@ -20,6 +21,7 @@ export class NativeMapComponent implements OnInit {
   @ViewChild('map') mapElement:any;
   private loading:any;
   map: GoogleMap;
+  
 
   private directionsService = new google.maps.DirectionsService();
   
@@ -38,6 +40,7 @@ export class NativeMapComponent implements OnInit {
     this.mapElement.style.height = this.platform.height() + 'px';
 
     this.loadMap();
+    
   }
 
   async loadMap(){
@@ -54,6 +57,10 @@ export class NativeMapComponent implements OnInit {
     }
 
     this.map = GoogleMaps.create(this.mapElement, mapOptions);
+    
+      console.log(this.map);
+      console.log(google.map);
+    
 
     try {
       this.addOriginMarker();
@@ -63,6 +70,7 @@ export class NativeMapComponent implements OnInit {
   };
 
   async addOriginMarker(){
+    
     try {
       const locationOptions: MyLocationOptions ={
         enableHighAccuracy: true
@@ -83,9 +91,17 @@ export class NativeMapComponent implements OnInit {
                   "time:" + mylocation.time,
                   "bearing:" + mylocation.bearing].join("\n");
 
+      
+      let icon: MarkerIcon = {
+        url: '../../assets/icon/navigation.png',
+        size: {
+          width: 32,
+          height: 24
+        }
+      };
       var marker = this.map.addMarkerSync({
         title: text,
-        icon: '../../assets/icon/navigation.png',
+        icon: "#000",//'../../assets/icon/navigation.png',
         animation: GoogleMapsAnimation.DROP,
         position: mylocation.latLng
       });
@@ -94,8 +110,21 @@ export class NativeMapComponent implements OnInit {
       var marker1 = this.map.addMarkerSync({
         title:"oi",
         icon:"#000",
-        position: {lat: -15.410046700000001, lng: -48.109999999999995}
+        position: {lat: -15.410046700000001, lng: -48.109999999999995},
+        
       })
+      let i = 0;
+      this.map.on(GoogleMapsEvent.MAP_DRAG_START).subscribe(res => {
+        setInterval(function(){
+          var lc = new google.maps.LatLng({lat: -15.410046700000001 -(-15.410046700000001/100*i), lng: -48.109999999999995-(-48.109999999999995/100*i)});
+          marker.setPosition(lc);
+          i++;
+        },20);
+        console.log("mecheu");
+      });
+      
+         
+      await marker1.setRotation(270);
       // marker.showInfoWindow();
 
       await this.directionsService.route({
@@ -103,7 +132,7 @@ export class NativeMapComponent implements OnInit {
         destination: marker1.getPosition(),
         travelMode:'DRIVING'
       }, async results =>{
-       
+        
         const steps = new Array<ILatLng>();
         const routes = results.routes[0].overview_path;
 
@@ -112,6 +141,14 @@ export class NativeMapComponent implements OnInit {
             lat:routes[index].lat(),
             lng:routes[index].lng()
           }
+
+          // var marker1 = this.map.addMarkerSync({
+          //   title:"oi",
+          //   icon:"#000",
+          //   position: {lat: routes[index].lat(), lng: routes[index].lng()},
+            
+          // })
+          
         }
         await this.map.moveCamera({
           target: steps,
@@ -124,31 +161,43 @@ export class NativeMapComponent implements OnInit {
         await this.map.addPolyline({
           points: steps,
           color:'#000',
-          width: 15
+          width: 10
         })
 
-         
+        await this.animation(steps, marker);
 
       })
 
-      let optionsCompass : DeviceOrientationCompassOptions = {
-        // frequency: 1000,
-        
+      const optionsCompass : DeviceOrientationCompassOptions = {
+         frequency: 20,
       }
-      // Watch the device compass heading change
-      var subscription = this.deviceOrientation.watchHeading(optionsCompass).subscribe(
+      
+       var subscription = this.deviceOrientation.watchHeading(optionsCompass).subscribe(
         (data: DeviceOrientationCompassHeading) => {
-          marker.setRotation(270);
-          this.map.moveCamera({
-            target: mylocation.latLng,
-            tilt: 60,
-            // zoom:18,
-            duration: 5000,
-            bearing: data.magneticHeading
-          });
+          
+           
+         
+          
+            // marker.setRotation(data.magneticHeading);
+            // this.map.moveCamera({
+            //   target: mylocation.latLng,
+            //   tilt: 60,
+            //   // zoom:18,
+            //   duration: 20,
+            //   bearing: 360
+            // });
+           
+            
+          
+
+          
+        
+         
+        
         },
         (error: any) => console.log(error)
       );
+      
      
     } catch (error) {
       console.error(error);
@@ -157,5 +206,65 @@ export class NativeMapComponent implements OnInit {
     }
       
   }
+
+  getCurrentLocation() {
+    let locationObs: Observable<any>;
+    
+
+    if (navigator.geolocation) {
+
+      locationObs = Observable.create(
+        obs=>{
+            navigator.geolocation.getCurrentPosition(function(position) {
+              let lat = position.coords.latitude;
+              let lng = position.coords.longitude;
+            
+              let location = new google.maps.LatLng(lat, lng);
+              
+              obs.next(location);
+              obs.complete();
+            }),function error(err) {
+              console.warn('ERROR(' + err.code + '): ' + err.message);
+            },{maximumAge:10000, timeout:5000, enableHighAccuracy: true};
+        }
+      ) 
+
+      return locationObs;
+     }
+  }
+
+async  animation(steps, marker){
+    console.log(marker);
+    let i =0;
+    
+    
+    await this.getCurrentLocation().subscribe(origin=>{
+      
+
+      
+      
+
+      let time = setInterval(r=>{
+        
+
+        
+        this.map.setCameraZoom(10);
+
+        marker.setPosition(steps[i]);
+        this.map.setCameraTarget(steps[i]);
+        
+        i++;
+        if(i >= steps.length){
+          clearInterval(time);
+        }
+      },20)
+      
+
+      
+    })
+  }
+
+  spin
+  
 
 }
